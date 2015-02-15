@@ -50,6 +50,7 @@ $(function() {
     }
 });
 
+// 取得自己的排名
 function getRank(members) {
     var rank = 1;
     for (var i = 0; i < members.length; ++i) {
@@ -58,15 +59,15 @@ function getRank(members) {
             ++rank;
         } else if (me.grade == member.grade) {
             if (member.id.indexOf(me.id) != -1) {
-                return rank;
+                break;
             } else {
                 ++rank;
             }
         } else {
-            return rank;
+            break;
         }
     }
-    return rank;
+    return rank + ' (' + (rank * 100.0 / members.length).toFixed(0) + '%)';
 }
 
 // 排序及统计信息
