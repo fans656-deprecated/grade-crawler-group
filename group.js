@@ -31,8 +31,9 @@ function parseGroup(group) {
 
 chrome.runtime.onMessage.addListener(function(group, sender, sendResponse) {
     var id = setInterval(function() {
+        var counts = parseInt($('.nav_member span.counts').text());
         var members = $('div.members');
-        if (members.length) {
+        if (members.length == counts) {
             clearInterval(id);
             members = members.map(function() {
                 var member = $(this);

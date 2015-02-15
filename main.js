@@ -114,6 +114,45 @@ function makeTable(rows, cls) {
     return table;
 }
 
+function drawHisto(a, mi, ma) {
+    var binSize = 10;
+    mi -= mi % binSize;
+    ma -= ma % binSize;
+    var n = (ma - mi) / binSize + 1;
+    var his = Array.apply(null, new Array(n)).map(function() { return 0; });
+    a.forEach(function(e) {
+        e -= e % binSize;
+        var t = e - mi;
+        var i = t / binSize;
+        ++his[i];
+    });
+    var labels = Array.apply(null, new Array(n)).map(function(v, i) {
+        return mi + i * binSize;
+    });
+    // draw
+    var canvas = $('<canvas />');
+    var cvs = canvas[0];
+    cvs.width = 800; cvs.height = 480;
+    var ctx = cvs.getContext('2d');
+    var x = 0;
+    var y = cvs.height;
+    console.log(x, y);
+    ctx.font = '12 Microsoft YaHei';
+    var dx = cvs.width / n;
+    var maHis = Math.max.apply(null, his) * 1.0;
+    for (var i = 0; i < n; ++i) {
+        var height = cvs.height * his[i] / maHis;
+        if (his[i]) {
+            ctx.fillStyle = '#81BEF7';
+            ctx.fillRect(x, cvs.height - height, dx - 1, height - 20);
+        }
+        ctx.fillStyle = '#000';
+        ctx.fillText(labels[i] + '  (' + his[i] + ')', x, y);
+        x += dx;
+    }
+    return canvas;
+}
+
 // 输出
 function render(groups, info) {
     var body = $('body');
@@ -135,6 +174,16 @@ function render(groups, info) {
         }));
         makeTable(rows, 'members').appendTo(body);
     });
+    
+    drawHisto(info.members.map(function(member) { return member.grade; }), info.minGrade, info.maxGrade).appendTo(body);
+
+    var rows = [
+        ['排名', '分数', '姓名', 'QQ'],
+    ];
+    rows = rows.concat(info.members.map(function(member, index) {
+        return [index + 1, member.grade, member.name, member.id];
+    }));
+    makeTable(rows, 'members').appendTo(body);
 }
 
 chrome.runtime.onMessage.addListener(function(group, sender, response) {
@@ -142,8 +191,6 @@ chrome.runtime.onMessage.addListener(function(group, sender, response) {
     groups[count++] = group;
     if (count == len) {
         var info = proc(groups);
-        console.log(info);
-        console.log(groups);
         render(groups, info);
     }
 });
