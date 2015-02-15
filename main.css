@@ -1,13 +1,24 @@
-.info div {
-    display: inline-block;
-    padding-right: 1em;
-    font-size: 1.5em;
+body {
+    font-family: 'Microsoft YaHei';
 }
 
-.me {
-    padding-bottom: 3em;
+table {
+    border-collapse: collapse;
+    margin: 2em 0 1em 2em;
 }
 
-span {
-    padding-right: 1em;
+th, td {
+    border: 1px solid #aaa;
+    background-color: #eee;
+    text-align: center;
+    font-size: 0.9em;
+    padding: 0 1em 0 1em;
+}
+
+.group-info {
+    margin-bottom: 0.1em;
+}
+
+.members {
+    margin-top: 0;
 }

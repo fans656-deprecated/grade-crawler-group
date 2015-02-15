@@ -50,30 +50,6 @@ $(function() {
     }
 });
 
-// 解析群成员名片
-function parseMember(member) {
-    var name = member.name;
-    if (name.indexOf('围观') == -1) {
-        var m = (' ' + name + ' ').match(/\D([234]\d\d)\D/);
-        if (m) {
-            var snum = m[1];
-            var grade = parseInt(snum);
-            if (grade != 408) {
-                member.grade = grade;
-            }
-        }
-    }
-    return member;
-}
-
-// 解析群
-function parseGroup(group) {
-    group.members = group.members.map(parseMember).filter(function(member) {
-        return member.grade;
-    });
-    return group;
-}
-
 function getRank(members) {
     var rank = 1;
     for (var i = 0; i < members.length; ++i) {
@@ -96,21 +72,14 @@ function getRank(members) {
 // 排序及统计信息
 function proc(groups) {
     groups.forEach(function(group) {
-        // 对组成员按分数降序排序
-        group.members.sort(function(a, b) { return b.grade - a.grade; });
-        // 计算最高/最低/平均分
-        var grades = group.members.map(function(member) { return member.grade; });
-        group.minGrade = Math.min.apply(null, grades);
-        group.maxGrade = Math.max.apply(null, grades);
-        group.aveGrade = grades.reduce(function(prev, cur) { return prev + cur; }, 0.0) / grades.length;
         // 查找自己的排名
         group.myRank = getRank(group.members);
     });
-    // 组间按最高分排序
-    groups.sort(function(a, b) { return a.maxGrade - b.maxGrade; });
+    // 组间按最高分降序排序
+    groups.sort(function(a, b) { return b.maxGrade - a.maxGrade; });
     groups.forEach(function(group, index) { group.rankByMaxGrade = index + 1; });
-    // 组间按平均分排序
-    groups.sort(function(a, b) { return a.aveGrade - b.aveGrade; });
+    // 组间按平均分降序排序
+    groups.sort(function(a, b) { return b.aveGrade - a.aveGrade; });
     groups.forEach(function(group, index) { group.rankByAveGrade = index + 1; });
     // 按组名排序
     groups.sort(function(a, b) { return a.name - b.name; });
@@ -122,71 +91,58 @@ function proc(groups) {
     grades = members.map(function(member) { return member.grade; });
     info.minGrade = Math.min.apply(null, grades);
     info.maxGrade = Math.max.apply(null, grades);
-    info.aveGrade = grades.reduce(function(prev, cur) { return prev + cur; }, 0.0) / grades.length;
+    info.aveGrade = (grades.reduce(function(prev, cur) { return prev + cur; }, 0.0) / grades.length).toFixed(0);
+    info.members = members;
     // 全院排名
     me.rank = getRank(members);
     return info;
 }
 
-function renderInfo(info) {
-    function renderGrade(cls, name, grade) {
-        var div = $('<div />', {'class': cls});
-        $('<span />', {text: name}).appendTo(div);
-        $('<span />', {'class': cls, text: grade}).appendTo(div);
-        return div;
+function makeTable(rows, cls) {
+    var table = $('<table />');
+    if (cls) {
+        table.attr('class', cls);
     }
-
-    var div = $('<div />', {'class': 'info'});
-    renderGrade('maxGrade', '最高分：', info.maxGrade).appendTo(div);
-    renderGrade('minGrade', '最低分：', info.minGrade).appendTo(div);
-    renderGrade('aveGrade', '平均分：', info.aveGrade.toFixed(0)).appendTo(div);
-    return div;
-}
-
-function renderMember(member, rank) {
-    var div = $('<li />', {'class': 'member'});
-    $('<span />', {'class': 'rank', text: rank + ' '}).appendTo(div);
-    $('<span />', {'class': 'grade', text: member.grade + ' '}).appendTo(div);
-    $('<span />', {'class': 'name', text: member.name + ' '}).appendTo(div);
-    $('<span />', {'class': 'id', text: member.id + ' '}).appendTo(div);
-    return div;
-}
-
-function renderGroup(group) {
-    var div = $('<div />', {'class': 'group'});
-    $('<span />', {'class': 'name', text: group.name + '组'}).appendTo(div);
-    $('<span />', {'class': 'myRank', text: group.myRank}).appendTo(div);
-    renderInfo(group).appendTo(div);
-    var ul = $('<ul />', {'class': 'members'});
-    group.members.forEach(function(member, index) {
-        renderMember(member, index + 1).appendTo(ul);
+    rows.forEach(function(row) {
+        var tr = $('<tr />');
+        row.forEach(function(col) {
+            $('<td />', {text: col}).appendTo(tr);
+        });
+        tr.appendTo(table);
     });
-    ul.appendTo(div);
-    return div;
-}
-
-function renderMe(me) {
-    var div = $('<div />', {'class': 'me'});
-    $('<span />', {text: '全院排名：'}).appendTo(div);
-    $('<span />', {'class': 'rank', text: me.rank}).appendTo(div);
-    return div;
+    return table;
 }
 
 // 输出
 function render(groups, info) {
     var body = $('body');
-    renderInfo(info).appendTo(body);
-    renderMe(me).appendTo(body);
-    console.log('info rendered');
-    groups.forEach(function(group) { renderGroup(group).appendTo(body); });
-    console.log('groups rendered');
+    makeTable([
+        ['院系', '最高分', '最低分', '平均分', '人数', '我的排名'],
+        ['计算机科学与技术', info.maxGrade, info.minGrade, info.aveGrade, info.members.length, me.rank],
+    ]).appendTo(body);
+    
+    groups.forEach(function(group) {
+        makeTable([
+            ['组', '组排名(最高分)', '组排名(平均分)', '最高分', '最低分', '平均分', '人数', '我的排名'],
+            [group.name, group.rankByMaxGrade, group.rankByAveGrade, group.maxGrade, group.minGrade, group.aveGrade, group.members.length, group.myRank],
+        ], 'group-info').appendTo(body);
+        var rows = [
+            ['排名', '分数', '姓名', 'QQ'],
+        ];
+        rows = rows.concat(group.members.map(function(member, index) {
+            return [index + 1, member.grade, member.name, member.id];
+        }));
+        makeTable(rows, 'members').appendTo(body);
+    });
 }
 
 chrome.runtime.onMessage.addListener(function(group, sender, response) {
     chrome.tabs.remove(sender.tab.id);
-    groups[count++] = parseGroup(group);
+    groups[count++] = group;
     if (count == len) {
         var info = proc(groups);
+        console.log(info);
+        console.log(groups);
         render(groups, info);
     }
 });
