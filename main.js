@@ -10,6 +10,8 @@ var groups = [
     {name: '6', id: '325208082'},
     {name: '7', id: '330453715'},
     {name: '9', id: '257854295'},
+    {name: '4', id: '330453715'},
+    {name: '1', id: '336517952'},
 ];
 // 群个数
 var len = groups.length;
